@@ -258,6 +258,9 @@ public:
 
     static
     FCDECL1(IMDInternalImport*, GetMetadataImport, ReflectClassBaseObject * pModuleUNSAFE);
+
+    static
+    PVOID QCALLTYPE AllocateTypeAssociatedMemory(QCall::TypeHandle type, UINT32 size);
 };
 
 class RuntimeMethodHandle {
