@@ -3,6 +3,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Needed due to the cmunged files being in the binary folders, the set(CMAKE_INCLUDE_CURRENT_DIR ON) is not enough
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${ARCH_SOURCES_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../interop/inc)
 
 add_definitions(-DUNICODE)
 add_definitions(-D_UNICODE)
@@ -590,6 +591,7 @@ list(APPEND VM_SOURCES_WKS
     dwreport.cpp
     eventreporter.cpp
     extensibleclassfactory.cpp
+    interoplibinterface.cpp
     mngstdinterfaces.cpp
     notifyexternals.cpp
     olecontexthelpers.cpp
@@ -619,6 +621,7 @@ list(APPEND VM_HEADERS_WKS
     dwreport.h
     eventreporter.h
     extensibleclassfactory.h
+    interoplibinterface.h
     mngstdinterfaces.h
     notifyexternals.h
     olecontexthelpers.h
