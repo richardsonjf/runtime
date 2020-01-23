@@ -98,6 +98,7 @@ set(CORECLR_LIBRARIES
     ildbsymlib
     utilcode
     v3binder
+    interop
 )
 
 if(WIN32)
