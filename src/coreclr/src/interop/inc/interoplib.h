@@ -12,15 +12,15 @@ namespace InteropLib
 
 #ifdef _WIN32
 
-// Get internal interop IUnknown dispatch pointers.
-void GetIUnknownImpl(
-    _Out_ void** fpQueryInterface,
-    _Out_ void** fpAddRef,
-    _Out_ void** fpRelease);
+    // Get internal interop IUnknown dispatch pointers.
+    void GetIUnknownImpl(
+        _Out_ void** fpQueryInterface,
+        _Out_ void** fpAddRef,
+        _Out_ void** fpRelease);
 
-// Register the default callback in the Reference Tracker Host scenario.
-// Returns true if registration succeeded, otherwise false.
-bool RegisterReferenceTrackerHostCallback(_In_ OBJECTHANDLE objectHandle);
+    // Register the default callback in the Reference Tracker Host scenario.
+    // Returns true if registration succeeded, otherwise false.
+    bool RegisterReferenceTrackerHostCallback(_In_ OBJECTHANDLE objectHandle);
 
 #endif // _WIN32
 

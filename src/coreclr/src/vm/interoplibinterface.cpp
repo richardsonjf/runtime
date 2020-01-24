@@ -76,6 +76,15 @@ void* QCALLTYPE ComWrappersNative::GetOrCreateComInterfaceForObject(
         gc.instRef = ObjectToOBJECTREF(*instance.m_ppObject);
         _ASSERTE(gc.implRef != NULL && gc.instRef != NULL);
 
+        void* vtables = nullptr;
+        DWORD vtableCount = 0;
+        PREPARE_NONVIRTUAL_CALLSITE(METHOD__COMWRAPPERS__COMPUTE_VTABLES);
+        DECLARE_ARGHOLDER_ARRAY(args, 4);
+        args[ARGNUM_0]  = OBJECTREF_TO_ARGHOLDER(gc.implRef);
+        args[ARGNUM_1]  = OBJECTREF_TO_ARGHOLDER(gc.instRef);
+        args[ARGNUM_2]  = DWORD_TO_ARGHOLDER(flags);
+        args[ARGNUM_3]  = PTR_TO_ARGHOLDER(&count);
+        CALL_MANAGED_METHOD(vtables, void*, args);
 
         // If it does, then return the
         // existing wrapper. If the object doesn't, then compute the
@@ -99,6 +108,13 @@ void QCALLTYPE ComWrappersNative::GetOrCreateObjectForComInstance(
     _ASSERTE(externalComObject != nullptr);
 
     BEGIN_QCALL;
+
+    // PREPARE_NONVIRTUAL_CALLSITE(METHOD__COMWRAPPERS__CREATE_OBJECT);
+    // DECLARE_ARGHOLDER_ARRAY(args, 3);
+    // args[ARGNUM_0]  = OBJECTREF_TO_ARGHOLDER(gc.implRef);
+    // args[ARGNUM_1]  = PTR_TO_ARGHOLDER(...);
+    // args[ARGNUM_2]  = DWORD_TO_ARGHOLDER(flags);
+    // CALL_MANAGED_METHOD(gc.retObjRef, OBJECTREF, args);
 
     END_QCALL;
 }
