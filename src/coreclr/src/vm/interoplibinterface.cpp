@@ -47,6 +47,20 @@ void QCALLTYPE ComWrappersNative::GetIUnknownImpl(
     END_QCALL;
 }
 
+// void ____()
+// {
+//     CONTRACTL
+//     {
+//         THROWS;
+//         //NOTHROW;
+//         MODE_COOPERATIVE;
+//         // MODE_PREEMPTIVE;
+//         // MODE_ANY;
+//         // PRECONDITION(pSrc != NULL);
+//     }
+//     CONTRACTL_END;
+// }
+
 void* QCALLTYPE ComWrappersNative::GetOrCreateComInterfaceForObject(
     _In_ QCall::ObjectHandleOnStack comWrappersImpl,
     _In_ QCall::ObjectHandleOnStack instance,
