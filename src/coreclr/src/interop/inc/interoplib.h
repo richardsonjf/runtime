@@ -22,6 +22,11 @@ namespace InteropLib
     // Returns true if registration succeeded, otherwise false.
     bool RegisterReferenceTrackerHostCallback(_In_ OBJECTHANDLE objectHandle);
 
+    IUnknown* GetOrCreateComInterfaceForObject(
+        _In_ QCall::ObjectHandleOnStack comWrappersImpl,
+        _In_ QCall::ObjectHandleOnStack instance,
+        _In_ INT32 flags);
+
 #endif // _WIN32
 
 }

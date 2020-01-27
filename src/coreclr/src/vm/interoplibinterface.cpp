@@ -191,11 +191,25 @@ void* QCALLTYPE ComWrappersNative::GetOrCreateComInterfaceForObject(
         GCPROTECT_BEGIN(gc);
 
         gc.implRef = ObjectToOBJECTREF(*comWrappersImpl.m_ppObject);
+        _ASSERTE(gc.implRef != NULL);
+
+        //
+        // Check the objects SyncBlock for an existing COM object
+        //
+
         gc.instRef = ObjectToOBJECTREF(*instance.m_ppObject);
-        _ASSERTE(gc.implRef != NULL && gc.instRef != NULL);
+        _ASSERTE(gc.instRef != NULL);
+
+        //
+        // Compute VTables for the new existing COM object
+        //
 
         DWORD vtableCount;
         void* vtables = CallComputeVTables(gc.implRef, gc.instRef, flags, &vtableCount);
+
+        //
+        // 
+        //
 
         GCPROTECT_END();
     }
