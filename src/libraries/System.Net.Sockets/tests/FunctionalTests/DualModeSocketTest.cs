@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 
 namespace System.Net.Sockets.Tests
 {
+    [Trait("Portkiller", "true")]
     [Trait("IPv4", "true")]
     [Trait("IPv6", "true")]
     public class DualModeConstructorAndProperty : DualModeBase
@@ -70,6 +71,7 @@ namespace System.Net.Sockets.Tests
         }
     }
 
+    [Trait("Portkiller", "true")]
     [Trait("IPv4", "true")]
     [Trait("IPv6", "true")]
     public class DualModeConnectToIPAddress : DualModeBase
@@ -161,6 +163,7 @@ namespace System.Net.Sockets.Tests
         }
     }
 
+    [Trait("Portkiller", "true")]
     [Trait("IPv4", "true")]
     [Trait("IPv6", "true")]
     public class DualModeConnectToIPEndPoint : DualModeBase
@@ -252,6 +255,7 @@ namespace System.Net.Sockets.Tests
         }
     }
 
+    [Trait("Portkiller", "true")]
     [Trait("IPv4", "true")]
     [Trait("IPv6", "true")]
     public class DualModeConnectToIPAddressArray : DualModeBase
@@ -294,6 +298,7 @@ namespace System.Net.Sockets.Tests
         }
     }
 
+    [Trait("Portkiller", "true")]
     [Trait("IPv4", "true")]
     [Trait("IPv6", "true")]
     public class DualModeConnectToHostString : DualModeBase
