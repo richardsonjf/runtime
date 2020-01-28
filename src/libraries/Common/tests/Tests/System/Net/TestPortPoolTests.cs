@@ -16,10 +16,20 @@ using Xunit;
 
 namespace System.Net.Test.Common
 {
+
+
     // Tests are relatively long-running, and we do not expect the TestPortPool to be changed frequently
     [OuterLoop]
+    [Collection(nameof(DisableParallelExecution))]
     public class TestPortPoolTests
     {
+        [CollectionDefinition(nameof(DisableParallelExecution), DisableParallelization = true)]
+        public class DisableParallelExecution {}
+
+        // Port range 25010-25470 is likely unused:
+        // https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.txt
+        private const int FirstUnusedPort = 25010;
+
         private static RemoteInvokeOptions CreateRemoteOptions(string portRangeString)
         {
             return new RemoteInvokeOptions()
@@ -61,9 +71,10 @@ namespace System.Net.Test.Common
             RemoteExecutor.Invoke(RunTest).Dispose();
         }
 
+
         [Theory]
-        [InlineData(111, 642)]
-        [InlineData(5, 10)]
+        [InlineData(FirstUnusedPort, FirstUnusedPort + 300)]
+        [InlineData(FirstUnusedPort, FirstUnusedPort + 3)]
         public static void AllPortsAreWithinRange(int minOuter, int maxOuter)
         {
             static void RunTest(string minStr, string maxStr)
@@ -79,8 +90,8 @@ namespace System.Net.Test.Common
                 HashSet<int> allVisitedValues = new HashSet<int>();
                 for (long i = 0; i < rangeLength * 2 + 42; i++)
                 {
-                    using PortAssignment assignment = TestPortPool.RentPort();
-                    allVisitedValues.Add(assignment.Port);
+                    using PortLease lease = TestPortPool.RentPort();
+                    allVisitedValues.Add(lease.Port);
                 }
 
                 Assert.Equal(rangeLength, allVisitedValues.Count);
@@ -133,7 +144,7 @@ namespace System.Net.Test.Common
                     {
                         Random rnd = new Random((int)ii);
 
-                        List<PortAssignment> livingAssignments = new List<PortAssignment>();
+                        List<PortLease> livingAssignments = new List<PortLease>();
 
                         Stopwatch sw = Stopwatch.StartNew();
                         long returnPortsAfter = rnd.Next(returnPortsAfterTicks);
@@ -142,12 +153,12 @@ namespace System.Net.Test.Common
                         {
                             Thread.Sleep(TimeSpan.FromTicks(rnd.Next(maxDelayInTicks)));
 
-                            PortAssignment assignment = TestPortPool.RentPort();
+                            PortLease lease = TestPortPool.RentPort();
 
-                            Assert.True(currentPorts.TryAdd(assignment.Port, 0),
+                            Assert.True(currentPorts.TryAdd(lease.Port, 0),
                                 "Same port has been rented more than once!");
 
-                            livingAssignments.Add(assignment);
+                            livingAssignments.Add(lease);
 
                             if (sw.ElapsedTicks > returnPortsAfter) Reset();
                         }
@@ -156,7 +167,7 @@ namespace System.Net.Test.Common
                         {
                             sw.Stop();
 
-                            foreach (PortAssignment assignment in livingAssignments)
+                            foreach (PortLease assignment in livingAssignments)
                             {
                                 Assert.True(currentPorts.TryRemove(assignment.Port, out _));
                                 assignment.Dispose();
@@ -174,7 +185,7 @@ namespace System.Net.Test.Common
                 return RemoteExecutor.SuccessExitCode;
             }
 
-            RemoteInvokeOptions options = CreateRemoteOptions($"100 {100 + portRangeLength}");
+            RemoteInvokeOptions options = CreateRemoteOptions($"{FirstUnusedPort} {FirstUnusedPort + portRangeLength}");
             RemoteExecutor.Invoke(RunTest, options).Dispose();
         }
 
@@ -191,11 +202,11 @@ namespace System.Net.Test.Common
                     for (int i = 0; i < requestPerThread; i++)
                     {
                         using Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                        using PortAssignment assignment = TestPortPool.RentPortAndBindSocket(socket, IPAddress.Loopback);
+                        using PortLease lease = TestPortPool.RentPortAndBindSocket(socket, IPAddress.Loopback);
 
                         Assert.True(socket.IsBound);
                         IPEndPoint ep = (IPEndPoint)socket.LocalEndPoint;
-                        Assert.Equal(assignment.Port, ep.Port);
+                        Assert.Equal(lease.Port, ep.Port);
                     }
                 }), levelOfParallelism).ToArray();
 
@@ -204,6 +215,58 @@ namespace System.Net.Test.Common
             }
 
             RemoteExecutor.Invoke(RunTest).Dispose();
+        }
+
+        private static readonly int[] s_mockSystemPorts =
+        {
+            FirstUnusedPort + 3, FirstUnusedPort + 42, FirstUnusedPort + 100, FirstUnusedPort + 142
+        };
+
+        [Fact]
+        public void DoesNotRentReservedPorts()
+        {
+            Socket[] mockSystemSockets =
+            {
+                new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
+                new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp),
+                new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp),
+                new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp),
+            };
+
+            try
+            {
+                // Occupy the mock system ports before starting the test process:
+                for (int i = 0; i < 4; i++)
+                {
+                    Socket s = mockSystemSockets[i];
+                    IPAddress ip = s.AddressFamily == AddressFamily.InterNetwork
+                        ? IPAddress.Loopback
+                        : IPAddress.IPv6Loopback;
+                    int port = s_mockSystemPorts[i];
+                    s.Bind(new IPEndPoint(ip, port));
+                }
+
+                // Run the external process:
+                RemoteInvokeOptions options = CreateRemoteOptions("25010 25200");
+                RemoteExecutor.Invoke(RunTest, options).Dispose();
+            }
+            finally
+            {
+                // Unbind and release all sockets:
+                foreach (Socket socket in mockSystemSockets)
+                {
+                    socket.Dispose();
+                }
+            }
+
+            static void RunTest()
+            {
+                for (int i = 0; i < 200; i++)
+                {
+                    using PortLease lease = TestPortPool.RentPort();
+                    Assert.DoesNotContain(lease.Port, s_mockSystemPorts);
+                }
+            }
         }
     }
 }

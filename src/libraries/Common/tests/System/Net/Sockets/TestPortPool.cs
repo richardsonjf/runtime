@@ -4,6 +4,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net.Security;
 using System.Net.Test.Common;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -11,11 +12,11 @@ using Microsoft.DotNet.RemoteExecutor;
 
 namespace System.Net.Sockets.Tests
 {
-    internal readonly struct PortAssignment : IDisposable
+    internal readonly struct PortLease : IDisposable
     {
         public int Port { get; }
 
-        internal PortAssignment(int port) => Port = port;
+        internal PortLease(int port) => Port = port;
 
         public void Dispose() => TestPortPool.Return(this);
     }
@@ -42,13 +43,12 @@ namespace System.Net.Sockets.Tests
             System.Net.Test.Common.Configuration.Sockets.TestPoolPortRange.Max;
         private static readonly int PortRangeLength = MaxPort - MinPort;
 
-        private static readonly ConcurrentDictionary<int, int> s_usedPorts = new ConcurrentDictionary<int, int>();
+        private static readonly ConcurrentDictionary<int, int> s_usedPorts = GetAllPortsUsedBySystem();
         private static int s_counter = int.MinValue;
 
-        public static PortAssignment RentPort()
+        public static PortLease RentPort()
         {
-            int cnt = 0;
-            for (;cnt < ThrowExhaustedAfter; cnt++)
+            for (int i = 0; i < ThrowExhaustedAfter; i++)
             {
                 // Although race conditions may happen theoretically because the following code block is not atomic,
                 // it requires the s_counter to move at least PortRangeLength steps between Increment and TryAdd,
@@ -60,23 +60,63 @@ namespace System.Net.Sockets.Tests
 
                 if (s_usedPorts.TryAdd(port, 0))
                 {
-                    return new PortAssignment(port);
+                    return new PortLease(port);
                 }
             }
 
             throw new TestPortPoolExhaustedException();
         }
 
-        public static void Return(PortAssignment portAssignment)
+        public static void Return(PortLease portLease)
         {
-            s_usedPorts.TryRemove(portAssignment.Port, out _);
+            s_usedPorts.TryRemove(portLease.Port, out _);
         }
 
-        public static PortAssignment RentPortAndBindSocket(Socket socket, IPAddress address)
+        public static PortLease RentPortAndBindSocket(Socket socket, IPAddress address)
         {
-            PortAssignment assignment = RentPort();
-            socket.Bind(new IPEndPoint(address, assignment.Port));
-            return assignment;
+            PortLease lease = RentPort();
+            socket.Bind(new IPEndPoint(address, lease.Port));
+            return lease;
+        }
+
+        private static ConcurrentDictionary<int, int> GetAllPortsUsedBySystem()
+        {
+            IPEndPoint ep4 = new IPEndPoint(IPAddress.Loopback, 0);
+            IPEndPoint ep6 = new IPEndPoint(IPAddress.IPv6Loopback, 0);
+
+            bool IsPortUsed(int port,
+                AddressFamily addressFamily,
+                SocketType socketType,
+                ProtocolType protocolType)
+            {
+                try
+                {
+                    IPEndPoint ep = addressFamily == AddressFamily.InterNetwork ? ep4 : ep6;
+                    ep.Port = port;
+                    using Socket socket = new Socket(addressFamily, socketType, protocolType);
+                    socket.Bind(ep);
+                    return false;
+                }
+                catch (SocketException)
+                {
+                    return true;
+                }
+            }
+
+            ConcurrentDictionary<int, int> result = new ConcurrentDictionary<int, int>();
+
+            for (int port = MinPort; port < MaxPort; port++)
+            {
+                if (IsPortUsed(port, AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) ||
+                    IsPortUsed(port, AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp) ||
+                    IsPortUsed(port, AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp) ||
+                    IsPortUsed(port, AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp))
+                {
+                    result.TryAdd(port, 0);
+                }
+            }
+
+            return result;
         }
     }
 }
