@@ -2454,6 +2454,7 @@ namespace System.Net.Sockets.Tests
         {
             private readonly ITestOutputHelper _output;
             private Socket _server;
+            private PortLease _serverPortLease;
             private Socket _acceptedSocket;
             private EventWaitHandle _waitHandle = new AutoResetEvent(false);
 
@@ -2475,7 +2476,8 @@ namespace System.Net.Sockets.Tests
                     _server = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 }
 
-                port = _server.BindToAnonymousPort(address);
+                _serverPortLease = _server.BindToPoolPort(address);
+                port = _serverPortLease.Port;
                 _server.Listen(1);
 
                 IPAddress remoteAddress = address.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any;
@@ -2505,6 +2507,7 @@ namespace System.Net.Sockets.Tests
                 try
                 {
                     _server.Dispose();
+                    _serverPortLease.Dispose();
                     if (_acceptedSocket != null)
                         _acceptedSocket.Dispose();
                 }
@@ -2587,6 +2590,7 @@ namespace System.Net.Sockets.Tests
         {
             private readonly ITestOutputHelper _output;
             private Socket _server;
+            private PortLease _serverPortLease;
             private EventWaitHandle _waitHandle = new AutoResetEvent(false);
 
             public EventWaitHandle WaitHandle
@@ -2607,7 +2611,8 @@ namespace System.Net.Sockets.Tests
                     _server = new Socket(address.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
                 }
 
-                port = _server.BindToAnonymousPort(address);
+                _serverPortLease = _server.BindToPoolPort(address);
+                port = _serverPortLease.Port;
 
                 SocketAsyncEventArgs e = new SocketAsyncEventArgs();
                 e.SetBuffer(new byte[1], 0, 1);
