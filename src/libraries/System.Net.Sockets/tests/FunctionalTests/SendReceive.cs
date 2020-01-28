@@ -56,10 +56,10 @@ namespace System.Net.Sockets.Tests
             const int TestTimeout = 30000;
 
             var left = new Socket(leftAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            left.BindToAnonymousPort(leftAddress);
+            using PortLease leftPortLease = left.BindToPoolPort(leftAddress);
 
             var right = new Socket(rightAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            right.BindToAnonymousPort(rightAddress);
+            using PortLease rightPortLease = right.BindToPoolPort(rightAddress);
 
             var leftEndpoint = (IPEndPoint)left.LocalEndPoint;
             var rightEndpoint = (IPEndPoint)right.LocalEndPoint;

@@ -75,8 +75,16 @@ namespace System.Net.Sockets.Tests
         public static PortLease RentPortAndBindSocket(Socket socket, IPAddress address)
         {
             PortLease lease = RentPort();
-            socket.Bind(new IPEndPoint(address, lease.Port));
-            return lease;
+            try
+            {
+                socket.Bind(new IPEndPoint(address, lease.Port));
+                return lease;
+            }
+            catch (SocketException)
+            {
+                lease.Dispose();
+                throw;
+            }
         }
 
         private static ConcurrentDictionary<int, int> GetAllPortsUsedBySystem()

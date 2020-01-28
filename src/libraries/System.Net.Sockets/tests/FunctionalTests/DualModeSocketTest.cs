@@ -642,7 +642,7 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             {
-                socket.BindToAnonymousPort(IPAddress.Loopback.MapToIPv6());
+                socket.BindToPoolPort(IPAddress.Loopback.MapToIPv6()).Dispose();
             }
         }
 
@@ -651,7 +651,7 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             {
-                socket.BindToAnonymousPort(IPAddress.Loopback);
+                socket.BindToPoolPort(IPAddress.Loopback).Dispose();
             }
         }
 
@@ -660,7 +660,7 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             {
-                socket.BindToAnonymousPort(IPAddress.IPv6Loopback);
+                socket.BindToPoolPort(IPAddress.IPv6Loopback).Dispose();
             }
         }
 
@@ -682,7 +682,7 @@ namespace System.Net.Sockets.Tests
             using (Socket serverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             {
                 serverSocket.DualMode = false;
-                serverSocket.BindToAnonymousPort(IPAddress.IPv6Any);
+                using PortLease portLease = serverSocket.BindToPoolPort(IPAddress.IPv6Any);
                 Assert.Throws<SocketException>(() =>
                 {
                     serverSocket.DualMode = true;
@@ -759,7 +759,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket serverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             {
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
                 serverSocket.Listen(1);
                 SocketClient client = new SocketClient(_log, serverSocket, connectTo, port);
                 Socket clientSocket = serverSocket.Accept();
@@ -835,7 +836,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket serverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             {
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
                 serverSocket.Listen(1);
                 IAsyncResult async = serverSocket.BeginAccept(null, null);
                 SocketClient client = new SocketClient(_log, serverSocket, connectTo, port);
@@ -938,7 +940,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket serverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp))
             {
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
                 serverSocket.Listen(1);
 
                 SocketAsyncEventArgs args = new SocketAsyncEventArgs();
@@ -1367,7 +1370,8 @@ namespace System.Net.Sockets.Tests
             // "The parameter remoteEP must not be of type DnsEndPoint."
             using (Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = socket.BindToAnonymousPort(IPAddress.IPv6Loopback);
+                using PortLease portLease = socket.BindToPoolPort(IPAddress.IPv6Loopback);
+                int port = portLease.Port;
                 EndPoint receivedFrom = new DnsEndPoint("localhost", port, AddressFamily.InterNetworkV6);
                 AssertExtensions.Throws<ArgumentException>("remoteEP", () =>
                 {
@@ -1492,7 +1496,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = socket.BindToAnonymousPort(IPAddress.IPv6Loopback);
+                using PortLease portLease = socket.BindToPoolPort(IPAddress.IPv6Loopback);
+                int port = portLease.Port;
                 EndPoint receivedFrom = new DnsEndPoint("localhost", port, AddressFamily.InterNetworkV6);
 
                 AssertExtensions.Throws<ArgumentException>("remoteEP", () =>
@@ -1573,7 +1578,8 @@ namespace System.Net.Sockets.Tests
             using (Socket serverSocket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
                 serverSocket.ReceiveTimeout = 500;
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
 
                 EndPoint receivedFrom = new IPEndPoint(connectTo, port);
                 IAsyncResult async = serverSocket.BeginReceiveFrom(new byte[1], 0, 1, SocketFlags.None, ref receivedFrom, null, null);
@@ -1636,7 +1642,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = socket.BindToAnonymousPort(IPAddress.IPv6Loopback);
+                using PortLease portLease = socket.BindToPoolPort(IPAddress.IPv6Loopback);
+                int port = portLease.Port;
                 SocketAsyncEventArgs args = new SocketAsyncEventArgs();
                 args.RemoteEndPoint = new DnsEndPoint("localhost", port, AddressFamily.InterNetworkV6);
                 args.SetBuffer(new byte[1], 0, 1);
@@ -1717,7 +1724,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket serverSocket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
 
                 ManualResetEvent waitHandle = new ManualResetEvent(false);
 
@@ -1830,7 +1838,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = socket.BindToAnonymousPort(IPAddress.IPv6Loopback);
+                using PortLease portLease = socket.BindToPoolPort(IPAddress.IPv6Loopback);
+                int port = portLease.Port;
                 EndPoint receivedFrom = new DnsEndPoint("localhost", port, AddressFamily.InterNetworkV6);
                 SocketFlags socketFlags = SocketFlags.None;
 
@@ -1924,7 +1933,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket serverSocket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
 
                 EndPoint receivedFrom = new IPEndPoint(connectTo, port);
                 SocketFlags socketFlags = SocketFlags.None;
@@ -2003,7 +2013,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = socket.BindToAnonymousPort(IPAddress.IPv6Loopback);
+                using PortLease portLease = socket.BindToPoolPort(IPAddress.IPv6Loopback);
+                int port = portLease.Port;
 
                 EndPoint receivedFrom = new DnsEndPoint("localhost", port, AddressFamily.InterNetworkV6);
                 SocketFlags socketFlags = SocketFlags.None;
@@ -2114,7 +2125,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket serverSocket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
 
                 EndPoint receivedFrom = new IPEndPoint(connectTo, port);
                 SocketFlags socketFlags = SocketFlags.None;
@@ -2174,7 +2186,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = socket.BindToAnonymousPort(IPAddress.IPv6Loopback);
+                using PortLease portLease = socket.BindToPoolPort(IPAddress.IPv6Loopback);
+                int port = portLease.Port;
 
                 SocketAsyncEventArgs args = new SocketAsyncEventArgs();
                 args.RemoteEndPoint = new DnsEndPoint("localhost", port, AddressFamily.InterNetworkV6);
@@ -2288,7 +2301,8 @@ namespace System.Net.Sockets.Tests
             using (Socket serverSocket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
                 serverSocket.ReceiveTimeout = expectedToTimeout ? TestSettings.FailingTestTimeout : TestSettings.PassingTestTimeout;
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
 
                 ManualResetEvent waitHandle = new ManualResetEvent(false);
 
@@ -2685,7 +2699,8 @@ namespace System.Net.Sockets.Tests
             using (Socket serverSocket = new Socket(SocketType.Dgram, ProtocolType.Udp))
             {
                 serverSocket.ReceiveTimeout = 1000;
-                int port = serverSocket.BindToAnonymousPort(listenOn);
+                using PortLease portLease = serverSocket.BindToPoolPort(listenOn);
+                int port = portLease.Port;
 
                 SocketUdpClient client = new SocketUdpClient(_log, serverSocket, connectTo, port, sendNow: false);
 
