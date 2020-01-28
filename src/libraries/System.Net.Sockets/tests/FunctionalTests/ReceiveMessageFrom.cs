@@ -20,7 +20,9 @@ namespace System.Net.Sockets.Tests
             {
                 using (Socket receiver = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                 {
-                    int port = receiver.BindToAnonymousPort(IPAddress.Loopback);
+                    using PortLease portLease = receiver.BindToPoolPort(IPAddress.Loopback);
+                    int port = portLease.Port;
+
                     receiver.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.PacketInformation, true);
 
                     receiver.ForceNonBlocking(forceNonBlocking);
@@ -60,7 +62,8 @@ namespace System.Net.Sockets.Tests
             {
                 using (Socket receiver = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp))
                 {
-                    int port = receiver.BindToAnonymousPort(IPAddress.IPv6Loopback);
+                    using PortLease portLease = receiver.BindToPoolPort(IPAddress.IPv6Loopback);
+                    int port = portLease.Port;
                     receiver.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.PacketInformation, true);
 
                     receiver.ForceNonBlocking(forceNonBlocking);
@@ -119,7 +122,8 @@ namespace System.Net.Sockets.Tests
             using (var receiver = new Socket(family, SocketType.Dgram, ProtocolType.Udp))
             using (var sender = new Socket(family, SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = receiver.BindToAnonymousPort(loopback);
+                using PortLease portLease = receiver.BindToPoolPort(loopback);
+                int port = portLease.Port;
                 receiver.SetSocketOption(level, SocketOptionName.PacketInformation, true);
                 sender.Bind(new IPEndPoint(loopback, 0));
 
@@ -175,7 +179,8 @@ namespace System.Net.Sockets.Tests
             using (var sender = new Socket(family, SocketType.Dgram, ProtocolType.Udp))
             using (var saea = new SocketAsyncEventArgs())
             {
-                int port = receiver.BindToAnonymousPort(loopback);
+                using PortLease portLease = receiver.BindToPoolPort(loopback);
+                int port = portLease.Port;
                 receiver.SetSocketOption(level, SocketOptionName.PacketInformation, true);
                 sender.Bind(new IPEndPoint(loopback, 0));
 

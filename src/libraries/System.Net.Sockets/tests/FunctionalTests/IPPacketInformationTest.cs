@@ -56,7 +56,8 @@ namespace System.Net.Sockets.Tests
             using (var receiver = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             using (var sender = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = receiver.BindToAnonymousPort(IPAddress.Loopback);
+                using PortLease portLease = receiver.BindToPoolPort(IPAddress.Loopback);
+                int port = portLease.Port;
 
                 var waitHandle = new ManualResetEvent(false);
 

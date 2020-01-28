@@ -97,7 +97,8 @@ namespace System.Net.Sockets.Tests
         {
             using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
-                int port = sock.BindToAnonymousPort(IPAddress.Loopback);
+                using PortLease portLease = sock.BindToPoolPort(IPAddress.Loopback);
+                int port = portLease.Port;
                 EndPoint endpoint = new DnsEndPoint("localhost", port);
 
                 AssertExtensions.Throws<ArgumentException>("remoteEP", () =>

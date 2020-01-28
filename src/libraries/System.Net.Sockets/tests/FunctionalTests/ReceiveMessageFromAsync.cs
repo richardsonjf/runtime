@@ -28,7 +28,8 @@ namespace System.Net.Sockets.Tests
             {
                 sender.Bind(new IPEndPoint(loopback, 0));
                 receiver.SetSocketOption(ipv4 ? SocketOptionLevel.IP : SocketOptionLevel.IPv6, SocketOptionName.PacketInformation, true);
-                int port = receiver.BindToAnonymousPort(loopback);
+                using PortLease portLease = receiver.BindToPoolPort(loopback);
+                int port = portLease.Port;
 
                 var args = new SocketAsyncEventArgs() { RemoteEndPoint = new IPEndPoint(ipv4 ? IPAddress.Any : IPAddress.IPv6Any, 0) };
                 args.Completed += (s,e) => completed.Set();
@@ -75,7 +76,8 @@ namespace System.Net.Sockets.Tests
             {
                 sender.Bind(new IPEndPoint(loopback, 0));
                 receiver.SetSocketOption(ipv4 ? SocketOptionLevel.IP : SocketOptionLevel.IPv6, SocketOptionName.PacketInformation, true);
-                int port = receiver.BindToAnonymousPort(loopback);
+                using PortLease portLease = receiver.BindToPoolPort(loopback);
+                int port = portLease.Port;
 
                 for (int iters = 0; iters < 5; iters++)
                 {
